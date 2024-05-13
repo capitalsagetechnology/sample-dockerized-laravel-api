@@ -1,21 +1,35 @@
 name: "books-api"
 
 services:
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   image: profmcdan/books-api
-  #   command: php artisan serve --host=0.0.0.0 --port=29000
-  #   volumes:
-  #     - ./app:/app
-  #   ports:
-  #     - "29000:29000"
-  #   env_file:
-  #     - ./.env
-  #   restart: always
-  #   depends_on:
-  #     - db
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: books-api
+    container_name: books-api
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/var/www
+      - ./storage:/var/www/storage
+    networks:
+      - app-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - app-network
 
   db:
     image: mysql:8.0
@@ -28,6 +42,8 @@ services:
       - "23306:3306"
     volumes:
       - db-data:/var/lib/mysql
+    networks:
+      - app-network
 
   redis:
     image: redis:7-alpine
@@ -43,3 +59,6 @@ volumes:
   db-data:
   redis-data:
 
+networks:
+  app-network:
+    driver: bridge
